@@ -1,0 +1,53 @@
+-- To check for nulls in critical fields across tables
+
+SELECT 'Users' AS table_name, COUNT(*) AS null_count
+FROM Users
+WHERE state IS NULL OR createdDate IS NULL OR lastLogin IS NULL;
+
+SELECT 'Receipts' AS table_name, COUNT(*) AS null_count
+FROM Receipts
+WHERE purchaseDate IS NULL OR totalSpent IS NULL;
+
+SELECT 'Brands' AS table_name, COUNT(*) AS null_count
+FROM Brands
+WHERE brandCode IS NULL OR categoryCode IS NULL;
+
+
+
+-- To check for duplicate receipts
+SELECT _id, COUNT(*)
+FROM Receipts
+GROUP BY _id
+HAVING COUNT(*) > 1;
+
+-- To check for duplicate brands by name
+SELECT name, COUNT(*)
+FROM Brands
+GROUP BY name
+HAVING COUNT(*) > 1;
+
+
+
+-- To check for negative or zero values in receipts
+SELECT *
+FROM Receipts
+WHERE totalSpent <= 0 OR purchasedItemCount <= 0;
+
+-- To check for invalid barcodes in brands
+SELECT *
+FROM Brands
+WHERE barcode NOT SIMILAR TO '[0-9]+';
+
+
+
+-- To check for orphaned receipts (userId not found in Users)
+SELECT r.*
+FROM Receipts r
+LEFT JOIN Users u ON r.userId = u._id
+WHERE u._id IS NULL;
+
+-- To check for invalid category references in Brands
+SELECT b.*
+FROM Brands b
+LEFT JOIN Categories c ON b.categoryCode = c.categoryCode
+WHERE c.categoryCode IS NULL;

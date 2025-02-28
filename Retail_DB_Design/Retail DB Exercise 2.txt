@@ -1,0 +1,66 @@
+-- Query 1: Top 5 Brands by Receipts Scanned for the Most Recent Month
+
+WITH recent_month_receipts AS (
+    SELECT
+        r.receipt_id,
+        b.brand_id,
+        b.name AS brand_name,
+        COUNT(r.receipt_id) AS receipt_count
+    FROM Receipts r
+    JOIN ReceiptLineItems rli ON r.receipt_id = rli.receipt_id
+    JOIN Products p ON rli.product_id = p.product_id
+    JOIN Brand b ON p.brand_id = b.brand_id
+    WHERE DATE_TRUNC('month', r.createDate) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+    GROUP BY b.brand_id, b.name
+)
+SELECT brand_name, receipt_count
+FROM recent_month_receipts
+ORDER BY receipt_count DESC
+LIMIT 5;
+
+
+
+-- Query 2: Comparison of Top 5 Brands by Receipts Scanned Between Two Months
+
+WITH monthly_receipts AS (
+    SELECT
+        b.brand_id,
+        b.name AS brand_name,
+        COUNT(r.receipt_id) AS receipt_count,
+        DATE_TRUNC('month', r.createDate) AS month
+    FROM Receipts r
+    JOIN ReceiptLineItems rli ON r.receipt_id = rli.receipt_id
+    JOIN Products p ON rli.product_id = p.product_id
+    JOIN Brand b ON p.brand_id = b.brand_id
+    WHERE DATE_TRUNC('month', r.createDate) IN (
+        DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month'),
+        DATE_TRUNC('month', CURRENT_DATE - INTERVAL '2 months')
+    )
+    GROUP BY b.brand_id, b.name, DATE_TRUNC('month', r.createDate)
+)
+SELECT month, brand_name, receipt_count
+FROM monthly_receipts
+ORDER BY month DESC, receipt_count DESC;
+
+
+
+
+-- Query 3: Average Spend for Accepted vs. Rejected Receipts
+
+SELECT 
+    rewardsReceiptStatus,
+    AVG(totalSpent) AS avg_spend
+FROM Receipts
+WHERE rewardsReceiptStatus IN ('Accepted', 'Rejected')
+GROUP BY rewardsReceiptStatus;
+
+
+
+-- Query 4: Total Items Purchased for Accepted vs. Rejected Receipts
+
+SELECT 
+    rewardsReceiptStatus,
+    SUM(purchasedItemCount) AS total_items_purchased
+FROM Receipts
+WHERE rewardsReceiptStatus IN ('Accepted', 'Rejected')
+GROUP BY rewardsReceiptStatus;
